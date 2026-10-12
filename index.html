@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Correlation Analyzer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Correlation Analyzer v2.0</h1>
+        <p>Аналіз кореляційних зв’язків між двома вибірками</p>
+      </div>
+      <nav aria-label="Розділи">
+        <button id="tab-analysis" class="active">Аналіз</button>
+        <button id="tab-lab">Лабораторія</button>
+        <button id="tab-theory">Теорія</button>
+      </nav>
+    </header>
+
+    <main id="page-analysis">
+      <section class="panel" aria-label="Введення даних">
+        <label for="txtX">Вибірка X</label>
+        <textarea id="txtX" rows="3" placeholder="1, 2, 3, 4, 5"></textarea>
+        <label for="txtY">Вибірка Y</label>
+        <textarea id="txtY" rows="3" placeholder="2, 4, 5, 4, 6"></textarea>
+        <label>Тип коефіцієнта</label>
+        <div class="seg" role="radiogroup">
+          <label
+            ><input type="radio" name="m" value="pearson" checked /><span
+              >Пірсон</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="m" value="spearman" /><span
+              >Спірмен</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="m" value="kendall" /><span
+              >Кендалл</span
+            ></label
+          >
+        </div>
+        <label for="preset">Приклади</label>
+        <select id="preset">
+          <option value="">— оберіть —</option>
+          <option value="pos">Сильний прямий зв’язок</option>
+          <option value="neg">Сильний обернений зв’язок</option>
+          <option value="none">Відсутність зв’язку</option>
+          <option value="curve">Монотонний нелінійний</option>
+        </select>
+        <button id="btnCalc" class="primary">Обчислити</button>
+        <button id="btnClear" class="ghost">Очистити</button>
+        <div id="msg" role="alert"></div>
+      </section>
+
+      <section class="stage">
+        <div class="canvaswrap">
+          <canvas id="plot" aria-label="Діаграма розсіяння"></canvas>
+        </div>
+        <div class="gauge" aria-hidden="true">
+          <i id="needle"></i><b>−1</b><b>0</b><b>+1</b>
+        </div>
+        <div id="result" aria-live="polite">
+          Введіть дані та натисніть «Обчислити»
+        </div>
+        <div class="barwrap">
+          <canvas id="bars" aria-label="Порівняння коефіцієнтів"></canvas>
+        </div>
+        <div class="toolbar">
+          <button id="btnView" disabled>Показати ранги</button>
+          <button id="btnRec" disabled>Записати відео</button>
+          <button id="btnPng" disabled>PNG</button>
+          <button id="btnTxt" disabled>Історія у .txt</button>
+        </div>
+        <p class="hint">
+          «Показати ранги» плавно переводить діаграму до рангів (Спірмен,
+          Кендалл). «Записати відео» зберігає анімацію діаграми у WebM.
+        </p>
+      </section>
+
+      <section class="stage history">
+        <div class="row">
+          <h2>Історія розрахунків</h2>
+          <button id="btnClearHistory">Очистити історію</button>
+        </div>
+        <ul id="historyList"></ul>
+        <p class="hint">
+          Історія зберігається у браузері. Натисніть на запис, щоб повернути ці
+          дані у поля вводу.
+        </p>
+      </section>
+    </main>
+
+    <main id="page-lab" hidden>
+      <section class="panel">
+        <label for="lab">Задайте коефіцієнт r: <b id="labr">0.00</b></label>
+        <input
+          type="range"
+          id="lab"
+          min="-100"
+          max="100"
+          value="0"
+          aria-label="Цільовий коефіцієнт кореляції"
+        />
+        <p id="labText"></p>
+        <p id="labInfo" class="hint"></p>
+        <button id="btnToAnalysis" class="primary">
+          Відкрити ці дані в «Аналізі»
+        </button>
+        <p class="hint">
+          Рухайте повзунок: 40 точок перебудовуються під обраний коефіцієнт
+          Пірсона.
+        </p>
+      </section>
+      <section class="stage">
+        <div class="canvaswrap tall">
+          <canvas id="labPlot" aria-label="Діаграма лабораторії"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <main id="page-theory" class="theory" hidden>
+      <section class="stage wide">
+        <h2>Шкала сили зв’язку за |r|</h2>
+        <div class="scale">
+          <span class="s1" style="flex: 3">Слабкий<br />0 – 0.3</span>
+          <span class="s2" style="flex: 4">Помірний<br />0.3 – 0.7</span>
+          <span class="s3" style="flex: 3">Сильний<br />0.7 – 1</span>
+        </div>
+        <p class="hint">
+          Знак «+» — обидві величини зростають разом, знак «−» — одна зростає,
+          інша спадає.
+        </p>
+      </section>
+
+      <div class="cards">
+        <article class="stage">
+          <svg
+            viewBox="0 0 120 80"
+            role="img"
+            aria-label="Точки вздовж прямої лінії"
+          >
+            <line x1="10" y1="70" x2="112" y2="10" class="ln" />
+            <circle cx="15" cy="66" r="3" />
+            <circle cx="32" cy="55" r="3" />
+            <circle cx="50" cy="46" r="3" />
+            <circle cx="68" cy="33" r="3" />
+            <circle cx="88" cy="26" r="3" />
+            <circle cx="106" cy="14" r="3" />
+          </svg>
+          <h3>Пірсон</h3>
+          <p>
+            Вимірює лінійний зв’язок між числовими даними. Чутливий до викидів.
+          </p>
+          <p class="formula">r = Σ(x−x̄)(y−ȳ) / √(Σ(x−x̄)² · Σ(y−ȳ)²)</p>
+        </article>
+        <article class="stage">
+          <svg
+            viewBox="0 0 120 80"
+            role="img"
+            aria-label="Точки вздовж вигнутої кривої"
+          >
+            <path d="M10 70 Q80 66 112 8" class="ln" fill="none" />
+            <circle cx="15" cy="69" r="3" />
+            <circle cx="35" cy="66" r="3" />
+            <circle cx="55" cy="61" r="3" />
+            <circle cx="75" cy="50" r="3" />
+            <circle cx="93" cy="34" r="3" />
+            <circle cx="107" cy="14" r="3" />
+          </svg>
+          <h3>Спірмен</h3>
+          <p>
+            Пірсон, обчислений для рангів. Ловить будь-який монотонний зв’язок,
+            не тільки лінійний.
+          </p>
+          <p class="formula">ρ = r(ранг X, ранг Y)</p>
+        </article>
+        <article class="stage">
+          <svg
+            viewBox="0 0 120 80"
+            role="img"
+            aria-label="Точки вздовж прямої з одним викидом"
+          >
+            <line x1="10" y1="70" x2="112" y2="10" class="ln" />
+            <circle cx="15" cy="66" r="3" />
+            <circle cx="35" cy="54" r="3" />
+            <circle cx="55" cy="44" r="3" />
+            <circle cx="75" cy="30" r="3" />
+            <circle cx="95" cy="22" r="3" />
+            <circle cx="100" cy="72" r="3" class="out" />
+          </svg>
+          <h3>Кендалл</h3>
+          <p>
+            Порівнює всі пари точок: скільки узгоджених і скільки ні. Стійкий до
+            викидів, добре працює на малих вибірках.
+          </p>
+          <p class="formula">τ = (P − Q) / √((T − Tx)(T − Ty))</p>
+        </article>
+      </div>
+
+      <section class="stage wide">
+        <h2>Який коефіцієнт обрати</h2>
+        <div class="tablewrap">
+          <table>
+            <tr>
+              <th></th>
+              <th>Пірсон</th>
+              <th>Спірмен</th>
+              <th>Кендалл</th>
+            </tr>
+            <tr>
+              <td>Тип зв’язку</td>
+              <td>лінійний</td>
+              <td>монотонний</td>
+              <td>монотонний</td>
+            </tr>
+            <tr>
+              <td>Дані</td>
+              <td>числові</td>
+              <td>числові або порядкові</td>
+              <td>числові або порядкові</td>
+            </tr>
+            <tr>
+              <td>Чутливість до викидів</td>
+              <td>висока</td>
+              <td>помірна</td>
+              <td>низька</td>
+            </tr>
+            <tr>
+              <td>Найкраще підходить</td>
+              <td>великі вибірки</td>
+              <td>нелінійні залежності</td>
+              <td>малі вибірки, багато однакових значень</td>
+            </tr>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
